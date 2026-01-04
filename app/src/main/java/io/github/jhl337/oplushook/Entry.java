@@ -13,114 +13,12 @@ public class Entry implements IXposedHookLoadPackage {
     public void handleLoadPackage(final XC_LoadPackage.LoadPackageParam param) throws Throwable {
         try {
             String pn = param.packageName;
-            ClassLoader cl = param.classLoader;
-            switch (pn) {
-                case "android":
-                    XposedBridge.log("OplusHook: Initializing...");
-                    hookActivityTaskManagerService(cl);
-                    hookOplusZoomWindow(cl);
-                    XposedBridge.log("OplusHook: Initialized hooks.");
-                    break;
-                case "com.oplus.screenshot":
-					hookScreenshotHardwareBuffer(cl);
-                    hookOplusScreenCapture(cl);
-					break;
-                case "com.oplus.appplatform":
-                    hookScreenshotHardwareBuffer(cl);
-                    hookScreenCapture(cl);
-					break;
-                default:
-                    break;
+            if (pn.equals("android")) {
+                XposedBridge.log("OplusHook: Initializing...");
+                ClassLoader cl = param.classLoader;
+                hookOplusZoomWindow(cl);
+                XposedBridge.log("OplusHook: Initialized hooks.");
             }
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private void hookActivityTaskManagerService(ClassLoader cl) {
-        try {
-            Class<?> atmsClazz = XposedHelpers.findClass("com.android.server.wm.ActivityTaskManagerService", cl);
-            Class<?> binderClazz = XposedHelpers.findClass("android.os.IBinder", cl);
-            Class<?> observerClazz = XposedHelpers.findClass("android.app.IScreenCaptureObserver", cl);
-            XposedHelpers.findAndHookMethod(
-                    atmsClazz,
-                    "registerScreenCaptureObserver",
-                    binderClazz,
-                    observerClazz,
-                    new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
-                            param.setResult(null);
-                        }
-                    }
-            );
-        } catch (Throwable ignored) {
-        }
-    }
-    
-    private void hookScreenCapture(ClassLoader cl) {
-        try {
-            Class<?> scClazz = XposedHelpers.findClass("android.window.ScreenCapture", cl);
-            Class<?> argsClazz = XposedHelpers.findClass("android.window.ScreenCapture$CaptureArgs", cl);
-
-            final Field captureSecureLayersField = argsClazz.getDeclaredField("mCaptureSecureLayers");
-            captureSecureLayersField.setAccessible(true);
-
-            XC_MethodHook hook = new XC_MethodHook() {
-                @Override
-                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    Object captureArgs = param.args[0];
-                    if (captureArgs != null) {
-                        try {
-                            captureSecureLayersField.set(captureArgs, true);
-                        } catch (IllegalAccessException ignored) {
-                        }
-                    }
-                }
-            };
-
-            for (Method m : scClazz.getDeclaredMethods()) {
-                String name = m.getName();
-                if ("nativeCaptureDisplay".equals(name) || "nativeCaptureLayers".equals(name)) {
-                    XposedBridge.hookMethod(m, hook);
-                }
-            }
-
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private void hookScreenshotHardwareBuffer(ClassLoader cl) {
-        try {
-            Class<?> clazz = XposedHelpers.findClass("android.window.ScreenCapture$ScreenshotHardwareBuffer", cl);
-            XposedHelpers.findAndHookMethod(
-                    clazz,
-                    "containsSecureLayers",
-                    new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
-                            param.setResult(false);
-                        }
-                    }
-            );
-        } catch (Throwable ignored) {
-        }
-    }
-
-    private void hookOplusScreenCapture(ClassLoader cl) {
-        try {
-            Class<?> clazz = XposedHelpers.findClass(
-                    "com.oplus.screenshot.OplusScreenCapture$CaptureArgs$Builder", cl);
-            XposedHelpers.findAndHookMethod(
-                    clazz,
-                    "setUid",
-                    long.class,
-                    new XC_MethodHook() {
-                        @Override
-                        protected void beforeHookedMethod(MethodHookParam param) {
-                            param.args[0] = -1L;
-                        }
-                    }
-            );
         } catch (Throwable ignored) {
         }
     }

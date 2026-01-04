@@ -2,7 +2,5 @@
 <resources>
     <string-array name="scope">
         <item>android</item>
-        <item>com.oplus.appplatform</item>
-        <item>com.oplus.screenshot</item>
     </string-array>
 </resources>

@@ -1,5 +1,16 @@
 # Oplus16_HideZoomWindow
-A xposed module to hide the flexible window for ColorOS 16.
+从截图和录屏中隐藏小窗的Xposed模块(为ColorOS16设计)。
 
-# Supported devices
-Only tested on Oneplus Ace6 (ColorOS 16.0.2.302&402).
+## 支持的设备
+仅在 一加 Ace6 (ColorOS 16.0.2.302&402&403) 测试通过。
+**不保证任何其它机型或其它版本的可用性。**
+
+## 功能
+- 从截图和录屏中隐藏小窗。
+- 从截图和录屏中隐藏侧边栏。
+- 从截图和录屏中隐藏输入法。
+- 从录屏中隐藏截图的预览窗。
+
+## 技术实现细节
+https://blog.xzr.moe/archives/136/
+仅做了对于Android16更改了Surface显示结构后的适配。

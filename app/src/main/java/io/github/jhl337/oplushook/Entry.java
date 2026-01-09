@@ -17,9 +17,42 @@ public class Entry implements IXposedHookLoadPackage {
                 XposedBridge.log("OplusHook: Initializing...");
                 ClassLoader cl = param.classLoader;
                 hookOplusZoomWindow(cl);
+                hookHandleTapOutsideFocusInsideSelf(cl);
                 XposedBridge.log("OplusHook: Initialized hooks.");
             }
         } catch (Throwable ignored) {
+        }
+    }
+
+    private void hookHandleTapOutsideFocusInsideSelf(final ClassLoader cl) {
+        try {
+            XposedHelpers.findAndHookMethod(
+                    "com.android.server.wm.WindowState",
+                    cl,
+                    "handleTapOutsideFocusInsideSelf",
+                    new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                            Object winState = param.thisObject;
+                            if (checkWindowForHide(winState)) {
+                                // XposedBridge.log("OplusHook: Intercept handleTapOutsideFocusInsideSelf for zoom window");
+                                Object wmService = XposedHelpers.getObjectField(winState, "mWmService");
+                                Object currentFocusedWindow = XposedHelpers.callMethod(wmService, "getFocusedWindowLocked");
+                                if (currentFocusedWindow != null && !checkWindowForHide(currentFocusedWindow)) {
+                                    // XposedBridge.log("OplusHook: Keeping focus on current non-zoom window");
+                                    int displayId = (int) XposedHelpers.callMethod(winState, "getDisplayId");
+                                    XposedHelpers.callMethod(wmService, "moveDisplayToTopInternal", displayId);
+                                    param.setResult(null);
+                                    return;
+                                } else {
+                                    // XposedBridge.log("OplusHook: No valid focus to maintain, blocking all operations");
+                                    param.setResult(null);
+                                }
+                            }
+                        }
+                    });
+        } catch (Throwable ignored) {
+            XposedBridge.log("OplusHook: Fuck hook failed.");
         }
     }
 

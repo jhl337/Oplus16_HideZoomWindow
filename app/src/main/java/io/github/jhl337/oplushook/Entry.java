@@ -35,17 +35,17 @@ public class Entry implements IXposedHookLoadPackage {
                         protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                             Object winState = param.thisObject;
                             if (checkWindowForHide(winState)) {
-                                // XposedBridge.log("OplusHook: Intercept handleTapOutsideFocusInsideSelf for zoom window");
+                                XposedBridge.log("OplusHook: Intercept handleTapOutsideFocusInsideSelf for zoom window");
                                 Object wmService = XposedHelpers.getObjectField(winState, "mWmService");
                                 Object currentFocusedWindow = XposedHelpers.callMethod(wmService, "getFocusedWindowLocked");
                                 if (currentFocusedWindow != null && !checkWindowForHide(currentFocusedWindow)) {
-                                    // XposedBridge.log("OplusHook: Keeping focus on current non-zoom window");
+                                    XposedBridge.log("OplusHook: Keeping focus on current non-zoom window");
                                     int displayId = (int) XposedHelpers.callMethod(winState, "getDisplayId");
                                     XposedHelpers.callMethod(wmService, "moveDisplayToTopInternal", displayId);
                                     param.setResult(null);
                                     return;
                                 } else {
-                                    // XposedBridge.log("OplusHook: No valid focus to maintain, blocking all operations");
+                                    XposedBridge.log("OplusHook: No valid focus to maintain, blocking all operations");
                                     param.setResult(null);
                                 }
                             }
